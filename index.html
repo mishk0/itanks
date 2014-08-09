@@ -3,9 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <title>iTanks</title>
+    <link rel="stylesheet" href="main.css">
 </head>
 <body>
+
+<form class="login-form">
+    <label for="login">
+        Ваш логин:
+        <input id="login" type="text" name="login" value="" autofocus>
+    </label>
+    <input type="submit" name="submit" value="ИГРАТЬ!">
+    </div>
+    <br >
+    <label for="tankType_0" class="tank-type-label">
+        <input id="tankType_0" type="radio" name="tankType" value="0">
+        Легкий
+    </label>
+    <label for="tankType_1" class="tank-type-label">
+        <input id="tankType_1" type="radio" name="tankType" value="1" checked>
+        Средний
+    </label>
+    <label for="tankType_2" class="tank-type-label">
+        <input id="tankType_2" type="radio" name="tankType" value="2">
+        Тяжелый
+    </label>
+</form>
+
+<div class="player-list-item-template player-list-item" style="display: none">
+    <span class="player-color"></span>
+    <span class="player-name"></span>
+    <span class="player-kills">
+        <span class="icon"></span>
+        <span class="value"></span>
+    </span>
+    <span class="player-deaths">
+        <span class="icon"></span>
+        <span class="value"></span>
+    </span>
+</div>
+
+<div class="player-list"></div>
+
+<div class="loader g-hidden">
+    <div class="loader-inner"></div>
+</div>
+
+
+
 <span class="timestamp"></span>
+
+<script src="http://yandex.st/jquery/2.1.1/jquery.min.js"></script>
 <script src="node_modules/vow/lib/vow.js"></script>
 <script src="node_modules/lodash/dist/lodash.js"></script>
 <script src="maps/map-common.js"></script>

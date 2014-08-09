@@ -1,0 +1,62 @@
+.loader
+  position: absolute
+  top: 0
+  right: 0
+  bottom: 0
+  left: 0
+  background: rgba(0, 0, 0, .3)
+
+  .loader-inner
+    display: none
+    height: 34px
+    width: 34px
+    position: absolute
+    left: 50%
+    top: 50%
+    margin-left: -17px
+    margin-top: -17px
+    background: url('images/loader.png') no-repeat
+    -webkit-animation: rotation 1s infinite 0s
+    animation: rotation 1s infinite 0s
+
+
+.g-hidden
+  display: none
+
+[name='login'].error
+  outline-color: red
+
+.tank-type-label
+  display: block
+
+
+.player-list-item
+  font-size: 35px
+
+  .player-color
+    display: inline-block
+    width: 32px
+    height: 32px
+    margin-right: 10px
+
+  .player-name, .player-kills, .player-deaths
+    vertical-align: top
+    line-height: 32px
+
+
+  .icon
+    background-repeat: no-repeat
+    background-size: contain
+    width: 32px
+    height: 32px
+    margin-right: 5px
+
+  .player-kills
+    .icon
+      background-image: url('images/kill.png')
+
+  .player-deaths
+    .icon
+      background-image: url('images/death.png')
+
+
