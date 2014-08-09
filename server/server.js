@@ -14,18 +14,22 @@ server.listen(port, function() {
     console.log('SERVER IS STARTED on port:', port);
 });
 
+var COLORS = ['blue', 'green', 'red', 'yellow'];
+var PLAYER_COLORS = ['blue', 'green', 'red'];
+
 var SOCKET_SEND_INTERVAL = 60;
 var GAME_LOGIN_UPDATE_INTERVAL = 5;
 
 var MAP_CELL_TYPE = {
     EMPTY: 0,
     NORMAL: 1,
-    HARD: 2
+    HARD: 2,
+    RESPAWN: 99
 };
 
 var FIELD_DIMENSION = 26;
 
-var TANK_SPEED = 0.2;
+var TANK_SPEED = 0.4;
 var BULLET_SPEED = 0.4;
 var GUN_RECOIL = 1000;
 
@@ -37,25 +41,28 @@ var DEFAULT_PLAYER = {
     hp: 1,
     direction: 0,
     position: [0, 0],
+    color: null,
     inMove: false,
     lastShootTS: 0,
     recoilTime: GUN_RECOIL,
     bulletSpeed: BULLET_SPEED,
     speed: TANK_SPEED,
     socket: null,
-    joint: false
+    joint: false,
+    kills: 0,
+    deaths: 0
 };
 
 /**
  * Добавляем ботов.
  */
 for (var c = 0; c < 5; ++c) {
-    PLAYERS.push(_.extend({}, {
+    PLAYERS.push(_.extend({}, DEFAULT_PLAYER, {
         id: String(Math.random()).substr(2),
         name: 'bot',
         direction: Math.floor(Math.random() * 4),
-        position: generateRandomIntegerPosition(),
-        color: 'red',
+        position: [12, 12],
+        color: 'yellow',
         inMove: true,
         joint: true,
         isBot: true
@@ -65,19 +72,25 @@ for (var c = 0; c < 5; ++c) {
 setInterval(function() {
     PLAYERS.forEach(function(player) {
         if (player.isBot) {
-            position = Math.floor(Math.random() * 4);
+            player.direction = Math.floor(Math.random() * 4);
         }
     });
 }, 1000);
 
 var MAP = require('../maps/map1.js');
+var RESPAWNS_POSITIONS = [];
 
-for (var i = 0; i < FIELD_DIMENSION; ++i) {
-    for (var j = 0; j < FIELD_DIMENSION; ++j) {
-        var cell = MAP[i][j];
+for (var x = 0; x < FIELD_DIMENSION; ++x) {
+    for (var y = 0; y < FIELD_DIMENSION; ++y) {
+        var cell = MAP[x][y];
 
         if (cell === MAP_CELL_TYPE.NORMAL) {
-            MAP[i][j] = [cell, 2];
+            MAP[x][y] = [cell, 2];
+
+        } else if (cell === MAP_CELL_TYPE.RESPAWN) {
+            RESPAWNS_POSITIONS.push([x + 1, y + 1]);
+
+            MAP[x][y] = MAP_CELL_TYPE.EMPTY;
         }
     }
 }
@@ -93,18 +106,11 @@ wsServer.on('request', function(request) {
         var connection = request.accept(null, request.origin);
 
         var player = _.extend({}, DEFAULT_PLAYER, {
-            position: generateRandomIntegerPosition(),
+            position: RESPAWNS_POSITIONS[Math.floor(Math.random() * RESPAWNS_POSITIONS.length)],
             socket: connection
         });
 
         PLAYERS.push(player);
-
-        broadcastExcept({
-            event: 'playerJoint',
-            data: {
-                name: 'Test User'
-            }
-        }, player);
 
         connection.on('message', function(message) {
             if (message.type !== 'utf8') {
@@ -125,7 +131,7 @@ wsServer.on('request', function(request) {
             switch (messageData.action) {
                 case 'login':
                     player.id = String(Math.random()).substr(2);
-                    player.color = 'red';
+                    player.color = PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)];
                     player.joint = true;
                     player.name = data.name;
                     player.tankType = data.tankType;
@@ -137,10 +143,21 @@ wsServer.on('request', function(request) {
                                 id: player.id,
                                 name: player.name,
                                 color: player.color,
-                                kills: 0,
-                                deaths: 0
+                                kills: player.kills,
+                                deaths: player.deaths
                             };
                         })
+                    });
+
+                    broadcastExcept(player, {
+                        event: 'playerJoined',
+                        data: {
+                            id: player.id,
+                            name: player.name,
+                            color: player.color,
+                            kills: player.kills,
+                            deaths: player.deaths
+                        }
                     });
 
                     send(player, {
@@ -181,6 +198,15 @@ wsServer.on('request', function(request) {
                 PLAYERS.splice(i, 1);
             }
 
+            if (player.joint) {
+                broadcast({
+                    event: 'playerLeft',
+                    data: {
+                        id: player.id
+                    }
+                });
+            }
+
             console.log('SOCKET DISCONNECT');
         });
 
@@ -206,11 +232,11 @@ setInterval(function() {
             if (!checkCollision(player)) {
                 switch (player.direction) {
                     case 0:
-                        player.position[0] = Math.ceil(currentPosition[0] + 0.9) - 0.9;
+                        player.position[0] = Math.floor(currentPosition[0] + 0.9) - 0.9;
                         break;
 
                     case 1:
-                        player.position[1] = Math.ceil(currentPosition[1] + 0.9) - 0.9;
+                        player.position[1] = Math.floor(currentPosition[1] + 0.9) - 0.9;
                         break;
 
                     case 2:
@@ -316,7 +342,12 @@ setInterval(function() {
         event: 'updateMapState',
         data: {
             players: players,
-            bullets: bullets
+            bullets: bullets.map(function(bullet) {
+                return {
+                    position: bullet.position,
+                    direction: bullet.direction
+                };
+            })
         }
     };
 
@@ -349,7 +380,7 @@ function send(player, data) {
  * @param data
  */
 function broadcast(data) {
-    broadcastExcept(data);
+    broadcastExcept(null, data);
 }
 
 /**
@@ -357,7 +388,7 @@ function broadcast(data) {
  * @param {Object} data
  * @param {Player} [except]
  */
-function broadcastExcept(data, except) {
+function broadcastExcept(except, data) {
     var json;
 
     try {
