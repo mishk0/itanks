@@ -17,10 +17,10 @@ server.listen(port, function() {
 var SOCKET_SEND_INTERVAL = 60;
 var GAME_LOGIN_UPDATE_INTERVAL = 5;
 
-var MAP_STATE = {
+var MAP_CELL_TYPE = {
     EMPTY: 0,
-    DESTR: 1,
-    INDES: 2
+    NORMAL: 1,
+    HARD: 2
 };
 
 var FIELD_DIMENSION = 26;
@@ -46,20 +46,29 @@ var DEFAULT_PLAYER = {
     joint: false
 };
 
-DEFAULT_BOT = _.extend({}, DEFAULT_PLAYER, {
-    color: 'red',
-    inMove: true,
-    joint: true
-});
-
+/**
+ * Добавляем ботов.
+ */
 for (var c = 0; c < 5; ++c) {
-    PLAYERS.push(_.extend({}, DEFAULT_BOT, {
+    PLAYERS.push(_.extend({}, {
         id: String(Math.random()).substr(2),
         name: 'bot',
         direction: Math.floor(Math.random() * 4),
-        position: generateRandomIntegerPosition()
+        position: generateRandomIntegerPosition(),
+        color: 'red',
+        inMove: true,
+        joint: true,
+        isBot: true
     }));
 }
+
+setInterval(function() {
+    PLAYERS.forEach(function(player) {
+        if (player.isBot) {
+            position = Math.floor(Math.random() * 4);
+        }
+    });
+}, 1000);
 
 var MAP = require('../maps/map1.js');
 
@@ -67,7 +76,7 @@ for (var i = 0; i < FIELD_DIMENSION; ++i) {
     for (var j = 0; j < FIELD_DIMENSION; ++j) {
         var cell = MAP[i][j];
 
-        if (cell === MAP_STATE.DESTR) {
+        if (cell === MAP_CELL_TYPE.NORMAL) {
             MAP[i][j] = [cell, 2];
         }
     }
@@ -254,7 +263,7 @@ function checkCollision(obj) {
         for (var y = y1; y <= y2; ++y) {
             var cell = MAP[x][y];
 
-            if (cell !== 0) {
+            if (cell !== MAP_CELL_TYPE.EMPTY) {
                 return;
             }
         }
