@@ -2,10 +2,9 @@
     if (window && !window.T) {
         var T = window.T = {};
     }
-
-    var _ = T.EMPTY = 0;
-    var x = T.DESTRUCTABLE = 1;
-    var O = T.INDESTRUCTABLE = 2;
+    var _ = T.EMPTY;
+    var x = T.BRICK;
+    var O = T.CEMENT;
 
     T.MapWidht = 26;
     T.MapHeight = 26;
