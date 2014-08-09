@@ -229,7 +229,7 @@ setInterval(function() {
 
             updatePosition(player);
 
-            if (true && !checkCollision(player)) {
+            if (!checkEnvironmentCollision(player)) {
 
                 switch (player.direction) {
                     case 0:
@@ -250,6 +250,33 @@ setInterval(function() {
                 }
 
             }
+
+            var playerCollision;
+            if (playerCollision = checkPlayerCollision(player)) {
+
+                switch (player.direction) {
+                    case 0:
+                        player.position[1] = playerCollision.position[1] + 2 * 0.8;
+                        break;
+
+                    case 1:
+                        player.position[0] = playerCollision.position[0] - 2 * 0.8;
+                        break;
+
+                    case 2:
+                        player.position[1] = playerCollision.position[1] - 2 * 0.8;
+                        break;
+
+                    case 3:
+                        player.position[0] = playerCollision.position[0] + 2 * 0.8;
+                        break;
+                }
+            }
+
+            //var bulletCollision;
+            //if (bulletCollision = checkBulletCollision(player)) {
+            //    broadcast()
+            //}
         }
     });
 
@@ -265,7 +292,7 @@ setInterval(function() {
  * @param {Object} obj
  * @return {boolean}
  */
-function checkCollision(obj) {
+function checkEnvironmentCollision(obj) {
     var posX = obj.position[0];
     var posY = obj.position[1];
 
@@ -291,8 +318,6 @@ function checkCollision(obj) {
             var cell = MAP[y][x];
 
             if (cell !== MAP_CELL_TYPE.EMPTY) {
-                console.log(x, y);
-
                 return;
             }
         }
@@ -300,6 +325,40 @@ function checkCollision(obj) {
 
     return true;
 }
+
+function checkPlayerCollision(player) {
+    var x1 = player.position[0] - 0.8;
+    var y1 = player.position[0] + 0.8;
+
+    for (var i = 0; i < PLAYERS.length; ++i) {
+        var playerCollision = PLAYERS[i];
+
+        if (playerCollision !== player) {
+            var ox1 = playerCollision.position[0] - 0.8;
+            var oy1 = playerCollision.position[1] - 0.8;
+
+            if (Math.abs(x1 - ox1) < 1.8 && Math.abs(y1 - oy1) < 1.8) {
+                return playerCollision;
+            }
+        }
+    }
+}
+
+//function checkBulletCollision(player) {
+//    var x1 = player.position[0] - 0.8;
+//    var y1 = player.position[0] + 0.8;
+//
+//    for (var i = 0; i < BULLETS.length; ++i) {
+//        var bulletCollision = BULLETS[i];
+//
+//        var ox1 = bulletCollision.position[0] - 0.2;
+//        var oy1 = bulletCollision.position[1] - 0.2;
+//
+//        if (Math.abs(x1 - ox1) < 1.8 && Math.abs(y1 - oy1) < 1.8) {
+//            return bulletCollision;
+//        }
+//    }
+//}
 
 function updatePosition(object) {
     switch (object.direction) {
