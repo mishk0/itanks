@@ -5,10 +5,10 @@ socket.onopen = function() {
     console.log('SOCKET OPENED');
 };
 
-socket.onmessage(function(data) {
+socket.onmessage = function(data) {
     console.log('MESSAGE:', data);
-});
+};
 
-socket.onclose(function() {
+socket.onclose = function() {
 
-});
+};
