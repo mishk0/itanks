@@ -1,4 +1,8 @@
 (function() {
+    if (window && !window.T) {
+        var T = window.T = {};
+    }
+
     var _ = T.EMPTY = 0;
     var x = T.DESTRUCTABLE = 1;
     var O = T.INDESTRUCTABLE = 2;
@@ -42,4 +46,9 @@
         [_, _, x, x, _, _, x, x, _, _, _, x, _, _, x, _, _, _, x, x, _, _, x, x, _, _],
         [_, _, x, x, _, _, x, x, _, _, _, x, _, _, x, _, _, _, x, x, _, _, x, x, _, _]
     ];
+
+    // для ноды
+    if (module) {
+        module.exports = T.Map;
+    }
 });
