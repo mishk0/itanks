@@ -15,7 +15,7 @@ server.listen(port, function() {
 });
 
 var COLORS = ['blue', 'green', 'red', 'yellow'];
-var PLAYER_COLORS = ['blue', 'green', 'red'];
+var PLAYER_COLORS = ['blue', 'green', 'red', 'yellow'];
 
 var SOCKET_SEND_INTERVAL = 60;
 var GAME_LOGIN_UPDATE_INTERVAL = 5;
