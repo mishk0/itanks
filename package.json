@@ -1,0 +1,23 @@
+{
+  "name": "itanks",
+  "version": "0.0.0",
+  "description": "Dendy tanks reincarnation",
+  "main": "lib/main.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mishk0/itanks.git"
+  },
+  "author": "viking, mishk0 & bach",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mishk0/itanks/issues"
+  },
+  "homepage": "https://github.com/mishk0/itanks",
+  "dependencies": {
+    "vow": "~0.4.5",
+    "lodash": "~2.4.1"
+  }
+}
