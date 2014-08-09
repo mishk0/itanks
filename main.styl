@@ -33,13 +33,17 @@
 .player-list-item
   font-size: 35px
 
+  .player-name
+    display: inline-block
+    width: 150px
+
   .player-color
     display: inline-block
     width: 32px
     height: 32px
     margin-right: 10px
 
-  .player-name, .player-kills, .player-deaths
+  .player-name, .player-kills .value, .player-deaths .value
     vertical-align: top
     line-height: 32px
 
@@ -49,7 +53,12 @@
     background-size: contain
     width: 32px
     height: 32px
-    margin-right: 5px
+    margin: 0 0px 0 10px
+    display: inline-block
+
+  .value
+    font-size: 80%
+    margin-left: -2px
 
   .player-kills
     .icon
@@ -58,5 +67,3 @@
   .player-deaths
     .icon
       background-image: url('images/death.png')
-
-
