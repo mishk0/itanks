@@ -10,12 +10,19 @@ server.listen(1337, function() {
 
 });
 
+var MAP_STATE = {
+    EMPTY: 0,
+
+
+
 var TANK_SPEED = 400;
 var BULLET_SPEED = 1000;
 
 var PLAYERS = [];
 var BULLETS = [];
 var MAP = require('../maps/1.json');
+
+MAP
 
 // create the server
 wsServer = new WebSocketServer({
@@ -31,7 +38,7 @@ wsServer.on('request', function(request) {
         var player = {
             hp: 1,
             movementState: {},
-            pos: {
+            position: {
                 x: 0,
                 y: 0
             }
@@ -68,7 +75,9 @@ wsServer.on('request', function(request) {
 });
 
 setInterval(function() {
-    PLAYERS.forEach({
-
+    PLAYERS.forEach(function(player) {
+        if (player.movementState.north) {
+            player.pos
+        }
     });
 }, 5);
