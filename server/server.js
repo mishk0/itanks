@@ -287,12 +287,25 @@ function checkTerrainCollision(bullet) {
                     var cellsToDamage = [[x, y]];
 
                     if (bullet.direction === 0 || bullet.direction === 2) {
+                        //if ((x + 0.5) - bullet.position[0] < 0) {
+                        //    cellsToDamage.push([x - 1, y]);
+                        //} else {
+                        //    cellsToDamage.push([x + 1, y]);
+                        //}
                         cellsToDamage.push([x - 1, y]);
                         cellsToDamage.push([x + 1, y]);
                     } else {
+
+                        //if ((x + 0.5) - bullet.position[0] < 0) {
+                        //    cellsToDamage.push([x, y - 1]);
+                        //} else {
+                        //    cellsToDamage.push([x, y + 1]);
+                        //}
                         cellsToDamage.push([x, y - 1]);
                         cellsToDamage.push([x, y + 1]);
                     }
+
+                    var toBroadcast = [];
 
                     for (var c = 0; c < cellsToDamage.length; ++c) {
 
@@ -300,22 +313,24 @@ function checkTerrainCollision(bullet) {
                         var x_ = cellPos[0];
                         var y_ = cellPos[1];
 
+                        if (x_ < 0 || x_ >= MAP_DIMENSION ||
+                            y_ < 0 || y_ >= MAP_DIMENSION) {
+                            continue;
+                        }
+
                         var cell_ = MAP[y_][x_];
 
-                        if (cell === MAP_CELL_TYPE.EMPTY ||
-                            (Array.isArray(cell) && cell[1] === 0)) {
+                        if (cell_ === MAP_CELL_TYPE.EMPTY ||
+                            (Array.isArray(cell_) && cell_[1] === 0)) {
                             break;
                         }
 
                         if (cell_ !== MAP_CELL_TYPE.HARD) {
                             cell_[1]--;
 
-                            broadcast({
-                                event: 'terrainDamage',
-                                data: {
-                                    positions: cellPos,
-                                    cell: cell_
-                                }
+                            toBroadcast.push({
+                                positions: cellPos,
+                                cell: cell_
                             });
                         }
 
@@ -326,6 +341,11 @@ function checkTerrainCollision(bullet) {
                             }
                         });
                     }
+
+                    broadcast({
+                        event: 'terrainDamage',
+                        data: toBroadcast
+                    });
 
                     return;
                 }
