@@ -598,24 +598,23 @@ function notDead(obj) {
 
 function respawnPlayer(player) {
 
-    setRandomRespawnPosition(player);
+    for (var i = 0; i < 10; ++i) {
+        setRandomRespawnPosition(player);
 
-    if (checkPlayerCollision(player)) {
-        setTimeout(function() {
-            respawnPlayer(player)
-        }, 5);
-
-    } else {
-        player.hp = player.maxHp;
-        player.dead = false;
-
-        send(player, {
-            event: 'updateHealth',
-            data: {
-                hp: player.hp
-            }
-        });
+        if (!checkPlayerCollision(player)) {
+            break;
+        }
     }
+
+    player.hp = player.maxHp;
+    player.dead = false;
+
+    send(player, {
+        event: 'updateHealth',
+        data: {
+            hp: player.hp
+        }
+    });
 }
 
 function setRandomRespawnPosition(player) {
