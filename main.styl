@@ -69,7 +69,9 @@ html, body
 
   .player-name
     display: inline-block
-    width: 150px
+    width: 140px
+    overflow: hidden
+    text-overflow: ellipsis
 
   .player-color
     display: inline-block
@@ -125,7 +127,7 @@ html:not(.ipad)
 
 html.ipad
   .b-game
-    padding-left: 80px
+    padding-left: 85px
 
 
 .b-pad-shoot
@@ -136,6 +138,7 @@ html.ipad
   bottom: 0
   left: 0
   border: 2px solid
+  margin-right: 5px
 
   /*.b-pad-nav_item
     position: absolute
