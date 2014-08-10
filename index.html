@@ -40,18 +40,21 @@
         <span class="icon"></span>
         <span class="value"></span>
     </span>
-    <span class="player-x">
+    <!--<span class="player-x">
         <span class="caption">x:</span>
         <span class="value"></span>
     </span>
     <span class="player-y">
         <span class="caption">y:</span>
         <span class="value"></span>
-    </span>
+    </span>-->
 
 </div>
 
 <div class="b-game" style="display:none">
+    <div class="b-pad-shoot">
+
+    </div>
     <div class="b-game__area"></div>
     <div class="b-info">
         <div class="player-list"></div>
@@ -69,6 +72,12 @@
         </svg>
     </div>
 
+    <div class="b-pad-nav">
+        <div class="b-pad-nav_up b-pad-nav_item"></div>
+        <div class="b-pad-nav_right b-pad-nav_item"></div>
+        <div class="b-pad-nav_down b-pad-nav_item"></div>
+        <div class="b-pad-nav_left b-pad-nav_item"></div>
+    </div>
 
 </div>
 
@@ -88,6 +97,8 @@
 
 
 <span class="timestamp"></span>
+
+<span class="debug"></span>
 
 <script src="http://yandex.st/jquery/2.1.1/jquery.min.js"></script>
 <script src="node_modules/vow/lib/vow.js"></script>
