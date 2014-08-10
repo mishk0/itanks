@@ -157,7 +157,11 @@ wsServer.on('request', function(request) {
                     player.color = PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)];
                     player.joint = true;
                     player.name = data.name;
-                    player.tankType = data.tankType || 1;
+                    player.tankType = data.tankType;
+
+                    if (isNaN(player.tankType)) {
+                        player.tankType = 1;
+                    }
 
                     _.extend(player, TANK_VARIATIONS[player.tankType]);
 
@@ -287,20 +291,9 @@ function checkTerrainCollision(bullet) {
                     var cellsToDamage = [[x, y]];
 
                     if (bullet.direction === 0 || bullet.direction === 2) {
-                        //if ((x + 0.5) - bullet.position[0] < 0) {
-                        //    cellsToDamage.push([x - 1, y]);
-                        //} else {
-                        //    cellsToDamage.push([x + 1, y]);
-                        //}
                         cellsToDamage.push([x - 1, y]);
                         cellsToDamage.push([x + 1, y]);
                     } else {
-
-                        //if ((x + 0.5) - bullet.position[0] < 0) {
-                        //    cellsToDamage.push([x, y - 1]);
-                        //} else {
-                        //    cellsToDamage.push([x, y + 1]);
-                        //}
                         cellsToDamage.push([x, y - 1]);
                         cellsToDamage.push([x, y + 1]);
                     }
@@ -605,17 +598,25 @@ function notDead(obj) {
 }
 
 function respawnPlayer(player) {
+
     setRandomRespawnPosition(player);
 
-    player.hp = player.maxHp;
-    player.dead = false;
+    if (checkPlayerCollision(player)) {
+        setTimeout(function() {
+            respawnPlayer(player)
+        }, 5);
 
-    send(player, {
-        event: 'updateHealth',
-        data: {
-            hp: player.hp
-        }
-    });
+    } else {
+        player.hp = player.maxHp;
+        player.dead = false;
+
+        send(player, {
+            event: 'updateHealth',
+            data: {
+                hp: player.hp
+            }
+        });
+    }
 }
 
 function setRandomRespawnPosition(player) {
