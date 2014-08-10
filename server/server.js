@@ -101,7 +101,7 @@ setInterval(function() {
     });
 }, 1000);
 
-var MAP = require('../maps/map1.js');
+var MAP = require('../maps/map_2.js');
 var RESPAWNS_POSITIONS = [];
 
 for (var x = 0; x < MAP_DIMENSION; ++x) {
@@ -277,24 +277,35 @@ function checkTerrainCollision(bullet) {
 
             var cell = MAP[y][x];
 
-            if (typeof cell === 'array' && cell[1] > 0) {
+            if (Array.isArray(cell) && cell[1] > 0) {
 
                 if (checkCollision(bullet, {
                     position: [x + 0.5, y + 0.5],
                     width: 1
                 })) {
                     cell[1]--;
+
+
+
+
+
+                    broadcast({
+                        event: 'terrain-damage',
+                        data: {
+                            position: [x, y],
+                            hp: cell[1]
+                        }
+                    });
+
+                    broadcast({
+                        event: 'hit',
+                        data: {
+                            position: bullet.position
+                        }
+                    });
+
+                    return;
                 }
-
-                broadcast({
-                    event: 'terrain-damage',
-                    data: {
-                        position: [x, y],
-                        hp: cell[1]
-                    }
-                });
-
-                return;
             }
         }
     }
@@ -307,12 +318,10 @@ function checkTerrainCollision(bullet) {
  */
 setInterval(function() {
 
-    BULLETS = BULLETS.map(function(bullet) {
+    BULLETS = BULLETS.filter(function(bullet) {
         updatePosition(bullet);
 
-        if (checkTerrainCollision(bullet)) {
-            return bullet;
-        }
+        return checkTerrainCollision(bullet);
     });
 
     PLAYERS.forEach(function(player) {
@@ -404,6 +413,13 @@ setInterval(function() {
                         }
                     });
 
+                    send(player, {
+                        event: 'updateHealth',
+                        data: {
+                            hp: 0
+                        }
+                    });
+
                     broadcast({
                         event: 'playerDeath',
                         data: {
@@ -449,7 +465,7 @@ function checkEnvironmentCollision(obj) {
         for (var y = cellY1; y < cellY2; ++y) {
             var cell = MAP[y][x];
 
-            if (cell !== MAP_CELL_TYPE.EMPTY) {
+            if (cell !== MAP_CELL_TYPE.EMPTY && (Array.isArray(cell) && cell[1] !== 0)) {
                 return;
             }
         }
@@ -548,6 +564,13 @@ function respawnPlayer(player) {
 
     player.hp = player.maxHp;
     player.dead = false;
+
+    send(player, {
+        event: 'updateHealth',
+        data: {
+            hp: player.hp
+        }
+    });
 }
 
 function setRandomRespawnPosition(player) {
