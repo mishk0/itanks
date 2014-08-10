@@ -34,10 +34,6 @@ html, body
 .g-hidden
   display: none
 
-.tank-type-label
-  display: block
-
-
 .b-game
   overflow: hidden
   position: relative
@@ -69,7 +65,6 @@ html, body
     margin-right: 10px
 
   .player-name, .player-kills .value, .player-deaths .value
-    font-family: Pixel
     vertical-align: top
     line-height: 32px
 
@@ -157,6 +152,7 @@ html.ipad
     margin-top: -50px*/
 
 body
+  font-family: 'Pixel'
   -webkit-user-select: none;  /* Chrome all / Safari all */
   -webkit-touch-callout: none;  /* Chrome all / Safari all */
   -moz-user-select: none;     /* Firefox all */
@@ -173,15 +169,13 @@ body
   width: 300px
   margin: 30px auto 0
   padding: 10px
-  background: #EFF0F2
-  border-radius: 10px
+  background: silver
 
 .smbt-btn
   padding: 10px
   margin: 0 auto
   display: block
   border: 0
-  border-radius: 10px
   background: #1ABC9C
   color:#fff
   margin-top:10px
@@ -190,6 +184,7 @@ body
 
 .b-auth
   h2
+    font-size: 230%
     text-align: center
     color: #1ABC9C
 
@@ -198,7 +193,6 @@ body
   margin: 0
   width: 150px
   padding: 5px
-  border-radius: 5px
   margin-left: 10px
   outline: none
 
@@ -210,10 +204,16 @@ body
 
 .b-tank-types__elems
   overflow: hidden
-  margin-bottom: 30px
+  margin-bottom: 15epx
+  text-align: justify
+
+  &::after
+    content: ''
+    display: inline-block
+    width: 100%
+
 
   label
-    float: left
     margin-right: 10px
 
 .b-lives
