@@ -19,6 +19,7 @@ var PLAYER_COLORS = ['blue', 'green', 'red', 'yellow'];
 
 var SOCKET_SEND_INTERVAL = 60;
 var GAME_LOGIN_UPDATE_INTERVAL = 5;
+var PLAYER_RESPAWN_INTERVAL = 3000;
 
 var MAP_CELL_TYPE = {
     EMPTY: 0,
@@ -27,7 +28,7 @@ var MAP_CELL_TYPE = {
     RESPAWN: 99
 };
 
-var FIELD_DIMENSION = 26;
+var MAP_DIMENSION = 26;
 var TANK_DIMENSION = 1.6;
 var TANK_DIMENSION_2 = TANK_DIMENSION / 2;
 var BULLET_DIMENSION = 0.4;
@@ -42,7 +43,8 @@ var BULLETS = [];
 
 var DEFAULT_PLAYER = {
     id: null,
-    hp: 1,
+    hp: null,
+    maxHP: null,
     direction: 0,
     position: [0, 0],
     color: null,
@@ -61,13 +63,15 @@ var DEFAULT_PLAYER = {
 
 var TANK_VARIATIONS = [
     {
+        maxHp: 1,
         speed: TANK_SPEED * 1.5,
         recoilTime: GUN_RECOIL / 2
     },
     {
-
+        maxHp: 2
     },
     {
+        maxHp: 3,
         speed: TANK_SPEED * 0.7,
         recoilTime: GUN_RECOIL / 0.7
     }
@@ -100,8 +104,8 @@ setInterval(function() {
 var MAP = require('../maps/map1.js');
 var RESPAWNS_POSITIONS = [];
 
-for (var x = 0; x < FIELD_DIMENSION; ++x) {
-    for (var y = 0; y < FIELD_DIMENSION; ++y) {
+for (var x = 0; x < MAP_DIMENSION; ++x) {
+    for (var y = 0; y < MAP_DIMENSION; ++y) {
         var cell = MAP[y][x];
 
         if (cell === MAP_CELL_TYPE.NORMAL) {
@@ -126,7 +130,6 @@ wsServer.on('request', function(request) {
         var connection = request.accept(null, request.origin);
 
         var player = _.extend({}, DEFAULT_PLAYER, {
-            position: _.clone(RESPAWNS_POSITIONS[Math.floor(Math.random() * RESPAWNS_POSITIONS.length)]),
             socket: connection
         });
 
@@ -158,6 +161,8 @@ wsServer.on('request', function(request) {
 
                     _.extend(player, TANK_VARIATIONS[player.tankType]);
 
+                    respawnPlayer(player);
+
                     send(player, {
                         event: 'playerList',
                         data: PLAYERS.filter(jointFilter).map(function(player) {
@@ -183,8 +188,11 @@ wsServer.on('request', function(request) {
                     });
 
                     send(player, {
-                        event: 'map',
-                        data: MAP
+                        event: 'details',
+                        data: {
+                            map: MAP,
+                            hp: player.hp
+                        }
                     });
 
                     break;
@@ -260,13 +268,53 @@ wsServer.on('request', function(request) {
 });
 
 function generateRandomIntegerPosition() {
-    return [Math.floor(Math.random() * FIELD_DIMENSION), Math.floor(Math.random() * FIELD_DIMENSION)];
+    return [Math.floor(Math.random() * MAP_DIMENSION), Math.floor(Math.random() * MAP_DIMENSION)];
+}
+
+function checkTerrainCollision(bullet) {
+    for (var y = 0; y < MAP_DIMENSION ; ++y) {
+        for (var x = 0; x < MAP_DIMENSION ; ++x) {
+
+            var cell = MAP[y][x];
+
+            if (typeof cell === 'array' && cell[1] > 0) {
+
+                if (checkCollision(bullet, {
+                    position: [x + 0.5, y + 0.5],
+                    width: 1
+                })) {
+                    cell[1]--;
+                }
+
+                broadcast({
+                    event: 'terrain-damage',
+                    data: {
+                        position: [x, y],
+                        hp: cell[1]
+                    }
+                });
+
+                return;
+            }
+        }
+    }
+
+    return true;
 }
 
 /*
  * World Logic update.
  */
 setInterval(function() {
+
+    BULLETS = BULLETS.map(function(bullet) {
+        updatePosition(bullet);
+
+        if (checkTerrainCollision(bullet)) {
+            return bullet;
+        }
+    });
+
     PLAYERS.forEach(function(player) {
         if (player.joint && !player.dead) {
 
@@ -324,31 +372,48 @@ setInterval(function() {
             if (bulletCollision = checkBulletCollision(player)) {
                 BULLETS.splice(BULLETS.indexOf(bulletCollision), 1);
 
-                player.death++;
-                player.dead = true;
+                player.hp--;
 
-                PLAYERS.some(function(player) {
-                    if (player.id === bulletCollision.by) {
-                        player.kills++;
-                        return true;
-                    }
-                });
+                if (player.hp > 0) {
+                    broadcast({
+                        event: 'hit',
+                        data: {
+                            position: bulletCollision.position
+                        }
+                    });
 
-                console.log('DEATH');
+                    send(player, {
+                        event: 'updateHealth',
+                        data: {
+                            hp: player.hp
+                        }
+                    })
+                } else {
+                    player.death++;
+                    player.dead = true;
 
-                broadcast({
-                    event: 'playerDeath',
-                    data: {
-                        dead: player.id,
-                        killer: bulletCollision.by
-                    }
-                });
+                    setTimeout(function() {
+                        respawnPlayer(player);
+
+                    }, PLAYER_RESPAWN_INTERVAL);
+
+                    PLAYERS.some(function(player) {
+                        if (player.id === bulletCollision.by) {
+                            player.kills++;
+                            return true;
+                        }
+                    });
+
+                    broadcast({
+                        event: 'playerDeath',
+                        data: {
+                            dead: player.id,
+                            killer: bulletCollision.by
+                        }
+                    });
+                }
             }
         }
-    });
-
-    BULLETS.forEach(function(bullet) {
-        updatePosition(bullet);
     });
 
 }, GAME_LOGIN_UPDATE_INTERVAL);
@@ -369,8 +434,8 @@ function checkEnvironmentCollision(obj) {
     var posY1 = posY - 0.8;
     var posY2 = posY + 0.8;
 
-    if (posX1 < 0 || posX2 > FIELD_DIMENSION ||
-        posY1 < 0 || posY2 > FIELD_DIMENSION) {
+    if (posX1 < 0 || posX2 > MAP_DIMENSION ||
+        posY1 < 0 || posY2 > MAP_DIMENSION) {
         return false;
     }
 
@@ -397,7 +462,7 @@ function checkPlayerCollision(player) {
     for (var i = 0; i < PLAYERS.length; ++i) {
         var otherPlayer = PLAYERS[i];
 
-        if (!player.dead && player.joint) {
+        if (!otherPlayer.dead && otherPlayer.joint) {
             if (checkCollision(player, otherPlayer)) {
                 return otherPlayer;
             }
@@ -476,6 +541,17 @@ function jointFilter(obj) {
 
 function notDead(obj) {
     return !obj.dead;
+}
+
+function respawnPlayer(player) {
+    setRandomRespawnPosition(player);
+
+    player.hp = player.maxHp;
+    player.dead = false;
+}
+
+function setRandomRespawnPosition(player) {
+    player.position = _.clone(RESPAWNS_POSITIONS[Math.floor(Math.random() * RESPAWNS_POSITIONS.length)]);
 }
 
 /*
