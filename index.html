@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <title>iTanks</title>
     <link rel="stylesheet" href="main.css">
+
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="AMC Walking Dead Story Sync">
+    <meta name="msapplication-tap-highlight" content="no"/>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="mobile-web-app-capable" content="yes">
+
 </head>
 <body>
 
@@ -48,14 +58,14 @@
         <span class="icon"></span>
         <span class="value"></span>
     </span>
-    <span class="player-x">
+    <!--<span class="player-x">
         <span class="caption">x:</span>
         <span class="value"></span>
     </span>
     <span class="player-y">
         <span class="caption">y:</span>
         <span class="value"></span>
-    </span>
+    </span>-->
 
 </div>
 
@@ -72,12 +82,21 @@
 
 
 <div class="b-game" style="display:none">
+    <div class="b-pad-shoot">
+
+    </div>
     <div class="b-game__area"></div>
     <div class="b-info">
         <div class="player-list"></div>
         <div class="b-lives"></div>
     </div>
 
+    <div class="b-pad-nav">
+        <div class="b-pad-nav_up b-pad-nav_item"></div>
+        <div class="b-pad-nav_right b-pad-nav_item"></div>
+        <div class="b-pad-nav_down b-pad-nav_item"></div>
+        <div class="b-pad-nav_left b-pad-nav_item"></div>
+    </div>
 
 </div>
 
@@ -97,6 +116,8 @@
 
 
 <span class="timestamp"></span>
+
+<span class="debug"></span>
 
 <script src="http://yandex.st/jquery/2.1.1/jquery.min.js"></script>
 <script src="node_modules/vow/lib/vow.js"></script>
