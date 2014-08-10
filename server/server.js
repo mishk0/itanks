@@ -156,10 +156,10 @@ wsServer.on('request', function(request) {
                     player.color = PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)];
                     player.joint = true;
                     player.name = data.name;
-                    player.tankType = data.tankType;
+                    player.tankType = 1;
 
-                    if (isNaN(player.tankType)) {
-                        player.tankType = 1;
+                    if (!isNaN(data.tankType)) {
+                        player.tankType = data.tankType;
                     }
 
                     _.extend(player, TANK_VARIATIONS[player.tankType]);
