@@ -277,32 +277,55 @@ function checkTerrainCollision(bullet) {
 
             var cell = MAP[y][x];
 
-            if (Array.isArray(cell) && cell[1] > 0) {
+            if (cell === MAP_CELL_TYPE.HARD || (Array.isArray(cell) && cell[1] > 0)) {
 
                 if (checkCollision(bullet, {
                     position: [x + 0.5, y + 0.5],
                     width: 1
                 })) {
-                    cell[1]--;
 
+                    var cellsToDamage = [[x, y]];
 
+                    if (bullet.direction === 0 || bullet.direction === 2) {
+                        cellsToDamage.push([x - 1, y]);
+                        cellsToDamage.push([x + 1, y]);
+                    } else {
+                        cellsToDamage.push([x, y - 1]);
+                        cellsToDamage.push([x, y + 1]);
+                    }
 
+                    for (var c = 0; c < cellsToDamage.length; ++c) {
 
+                        var cellPos = cellsToDamage[c];
+                        var x_ = cellPos[0];
+                        var y_ = cellPos[1];
 
-                    broadcast({
-                        event: 'terrain-damage',
-                        data: {
-                            position: [x, y],
-                            hp: cell[1]
+                        var cell_ = MAP[y_][x_];
+
+                        if (cell === MAP_CELL_TYPE.EMPTY ||
+                            (Array.isArray(cell) && cell[1] === 0)) {
+                            break;
                         }
-                    });
 
-                    broadcast({
-                        event: 'hit',
-                        data: {
-                            position: bullet.position
+                        if (cell_ !== MAP_CELL_TYPE.HARD) {
+                            cell_[1]--;
+
+                            broadcast({
+                                event: 'terrainDamage',
+                                data: {
+                                    positions: cellPos,
+                                    cell: cell_
+                                }
+                            });
                         }
-                    });
+
+                        broadcast({
+                            event: 'hit',
+                            data: {
+                                position: bullet.position
+                            }
+                        });
+                    }
 
                     return;
                 }
@@ -465,8 +488,10 @@ function checkEnvironmentCollision(obj) {
         for (var y = cellY1; y < cellY2; ++y) {
             var cell = MAP[y][x];
 
-            if (cell !== MAP_CELL_TYPE.EMPTY && (Array.isArray(cell) && cell[1] !== 0)) {
-                return;
+            if (cell !== MAP_CELL_TYPE.EMPTY) {
+                if (!Array.isArray(cell) || cell[1] !== 0) {
+                    return;
+                }
             }
         }
     }
