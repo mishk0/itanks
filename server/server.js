@@ -14,8 +14,7 @@ server.listen(port, function() {
     console.log('SERVER IS STARTED on port:', port);
 });
 
-var COLORS = ['blue', 'green', 'red', 'yellow'];
-var PLAYER_COLORS = ['blue', 'green', 'red', 'yellow'];
+var PLAYER_COLORS = ['blue', 'green', 'red', 'yellow', 'brown', 'gray', 'lblue', 'orange', 'tank_purple'];
 
 var SOCKET_SEND_INTERVAL = 60;
 var GAME_LOGIN_UPDATE_INTERVAL = 5;
