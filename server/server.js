@@ -28,6 +28,10 @@ var MAP_CELL_TYPE = {
 };
 
 var FIELD_DIMENSION = 26;
+var TANK_DIMENSION = 1.6;
+var TANK_DIMENSION_2 = TANK_DIMENSION / 2;
+var BULLET_DIMENSION = 0.4;
+var BULLET_DIMENSION_2 = BULLET_DIMENSION / 2;
 
 var TANK_SPEED = 0.025;
 var BULLET_SPEED = 0.05;
@@ -50,15 +54,31 @@ var DEFAULT_PLAYER = {
     socket: null,
     joint: false,
     kills: 0,
-    deaths: 0
+    deaths: 0,
+    width: TANK_DIMENSION,
+    dead: false
 };
+
+var TANK_VARIATIONS = [
+    {
+        speed: TANK_SPEED * 1.5,
+        recoilTime: GUN_RECOIL / 2
+    },
+    {
+
+    },
+    {
+        speed: TANK_SPEED * 0.7,
+        recoilTime: GUN_RECOIL / 0.7
+    }
+];
 
 /**
  * Добавляем ботов.
  */
 for (var c = 0; c < 5 && false; ++c) {
     PLAYERS.push(_.extend({}, DEFAULT_PLAYER, {
-        id: String(Math.random()).substr(2),
+        id: getUniqId(),
         name: 'bot',
         direction: Math.floor(Math.random() * 4),
         position: [12, 12],
@@ -130,11 +150,13 @@ wsServer.on('request', function(request) {
 
             switch (messageData.action) {
                 case 'login':
-                    player.id = String(Math.random()).substr(2);
+                    player.id = getUniqId();
                     player.color = PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)];
                     player.joint = true;
                     player.name = data.name;
-                    player.tankType = data.tankType;
+                    player.tankType = data.tankType || 1;
+
+                    _.extend(player, TANK_VARIATIONS[player.tankType]);
 
                     send(player, {
                         event: 'playerList',
@@ -178,11 +200,33 @@ wsServer.on('request', function(request) {
                     if (player.lastShootTS + player.recoilTime < now) {
                         player.lastShootTS = now;
 
-                        BULLETS.push({
+                        var bullet = {
+                            objType: 'bullet',
                             position: _.clone(player.position),
                             direction: player.direction,
-                            speed: player.bulletSpeed
-                        });
+                            speed: player.bulletSpeed,
+                            width: BULLET_DIMENSION,
+                            ts: now,
+                            id: getUniqId(),
+                            by: player.id
+                        };
+
+                        switch (bullet.direction) {
+                            case 0:
+                                bullet.position[1] -= TANK_DIMENSION_2 - 0.1;
+                                break;
+                            case 1:
+                                bullet.position[0] += TANK_DIMENSION_2 + 0.1;
+                                break;
+                            case 2:
+                                bullet.position[1] += TANK_DIMENSION_2 + 0.1;
+                                break;
+                            case 3:
+                                bullet.position[0] -= TANK_DIMENSION_2 - 0.1;
+                                break;
+                        }
+
+                        BULLETS.push(bullet);
                     }
                     break;
 
@@ -224,59 +268,82 @@ function generateRandomIntegerPosition() {
  */
 setInterval(function() {
     PLAYERS.forEach(function(player) {
-        if (player.joint && player.inMove) {
-            currentPosition = _.clone(player.position);
+        if (player.joint && !player.dead) {
 
-            updatePosition(player);
+            if (player.inMove) {
+                currentPosition = _.clone(player.position);
 
-            if (!checkEnvironmentCollision(player)) {
+                updatePosition(player);
 
-                switch (player.direction) {
-                    case 0:
-                        player.position[1] = Math.floor(currentPosition[1] - 0.8) + 0.8;
-                        break;
+                if (!checkEnvironmentCollision(player)) {
 
-                    case 1:
-                        player.position[0] = Math.ceil(currentPosition[0] + 0.8) - 0.8;
-                        break;
+                    switch(player.direction) {
+                        case 0:
+                            player.position[1] = Math.floor(currentPosition[1] - TANK_DIMENSION_2) + TANK_DIMENSION_2;
+                            break;
 
-                    case 2:
-                        player.position[1] = Math.ceil(currentPosition[1] + 0.8) - 0.8;
-                        break;
+                        case 1:
+                            player.position[0] = Math.ceil(currentPosition[0] + TANK_DIMENSION_2) - TANK_DIMENSION_2;
+                            break;
 
-                    case 3:
-                        player.position[0] = Math.floor(currentPosition[0] - 0.8) + 0.8;
-                        break;
+                        case 2:
+                            player.position[1] = Math.ceil(currentPosition[1] + TANK_DIMENSION_2) - TANK_DIMENSION_2;
+                            break;
+
+                        case 3:
+                            player.position[0] = Math.floor(currentPosition[0] - TANK_DIMENSION_2) + TANK_DIMENSION_2;
+                            break;
+                    }
+
                 }
 
-            }
+                var playerCollision;
+                if (playerCollision = checkPlayerCollision(player)) {
 
-            var playerCollision;
-            if (playerCollision = checkPlayerCollision(player)) {
+                    switch(player.direction) {
+                        case 0:
+                            player.position[1] = playerCollision.position[1] + TANK_DIMENSION + 0.01;
+                            break;
 
-                switch (player.direction) {
-                    case 0:
-                        player.position[1] = playerCollision.position[1] + 2 * 0.8;
-                        break;
+                        case 1:
+                            player.position[0] = playerCollision.position[0] - TANK_DIMENSION - 0.01;
+                            break;
 
-                    case 1:
-                        player.position[0] = playerCollision.position[0] - 2 * 0.8;
-                        break;
+                        case 2:
+                            player.position[1] = playerCollision.position[1] - TANK_DIMENSION - 0.01;
+                            break;
 
-                    case 2:
-                        player.position[1] = playerCollision.position[1] - 2 * 0.8;
-                        break;
-
-                    case 3:
-                        player.position[0] = playerCollision.position[0] + 2 * 0.8;
-                        break;
+                        case 3:
+                            player.position[0] = playerCollision.position[0] + TANK_DIMENSION + 0.01;
+                            break;
+                    }
                 }
             }
 
-            //var bulletCollision;
-            //if (bulletCollision = checkBulletCollision(player)) {
-            //    broadcast()
-            //}
+            var bulletCollision;
+            if (bulletCollision = checkBulletCollision(player)) {
+                BULLETS.splice(BULLETS.indexOf(bulletCollision), 1);
+
+                player.death++;
+                player.dead = true;
+
+                PLAYERS.some(function(player) {
+                    if (player.id === bulletCollision.by) {
+                        player.kills++;
+                        return true;
+                    }
+                });
+
+                console.log('DEATH');
+
+                broadcast({
+                    event: 'playerDeath',
+                    data: {
+                        dead: player.id,
+                        killer: bulletCollision.by
+                    }
+                });
+            }
         }
     });
 
@@ -327,38 +394,61 @@ function checkEnvironmentCollision(obj) {
 }
 
 function checkPlayerCollision(player) {
-    var x1 = player.position[0] - 0.8;
-    var y1 = player.position[0] + 0.8;
-
     for (var i = 0; i < PLAYERS.length; ++i) {
-        var playerCollision = PLAYERS[i];
+        var otherPlayer = PLAYERS[i];
 
-        if (playerCollision !== player) {
-            var ox1 = playerCollision.position[0] - 0.8;
-            var oy1 = playerCollision.position[1] - 0.8;
-
-            if (Math.abs(x1 - ox1) < 1.8 && Math.abs(y1 - oy1) < 1.8) {
-                return playerCollision;
+        if (!player.dead && player.joint) {
+            if (checkCollision(player, otherPlayer)) {
+                return otherPlayer;
             }
         }
     }
 }
 
-//function checkBulletCollision(player) {
-//    var x1 = player.position[0] - 0.8;
-//    var y1 = player.position[0] + 0.8;
-//
-//    for (var i = 0; i < BULLETS.length; ++i) {
-//        var bulletCollision = BULLETS[i];
-//
-//        var ox1 = bulletCollision.position[0] - 0.2;
-//        var oy1 = bulletCollision.position[1] - 0.2;
-//
-//        if (Math.abs(x1 - ox1) < 1.8 && Math.abs(y1 - oy1) < 1.8) {
-//            return bulletCollision;
-//        }
-//    }
-//}
+/**
+ * Поиск столкновения по оси X.
+ * @param {Object} object
+ * @param {Object} otherObject
+ * @return {boolean}
+ */
+function checkCollision(object, otherObject) {
+    if (object !== otherObject) {
+
+        var checks = [true, true];
+
+        for (var axis = 0; axis < 2; ++axis) {
+
+            var pos1 = object.position[axis] - object.width / 2;
+            var otherPos1 = otherObject.position[axis] - otherObject.width / 2;
+
+            var delta = otherPos1 - pos1;
+
+            if (delta > 0) {
+                if (delta < object.width) {
+                    checks[axis] = false;
+                }
+            } else {
+                if (-delta < otherObject.width) {
+                    checks[axis] = false;
+                }
+            }
+        }
+
+        return checks[0] === false && checks[1] === false;
+    }
+}
+
+function checkBulletCollision(player) {
+    for (var i = 0; i < BULLETS.length; ++i) {
+        var bullet = BULLETS[i];
+
+        if (bullet.by !== player.id) {
+            if (checkCollision(player, bullet)) {
+                return bullet
+            }
+        }
+    }
+}
 
 function updatePosition(object) {
     switch (object.direction) {
@@ -384,11 +474,15 @@ function jointFilter(obj) {
     return obj.joint;
 }
 
+function notDead(obj) {
+    return !obj.dead;
+}
+
 /*
  * Send updates to users.
  */
 setInterval(function() {
-    var players = PLAYERS.filter(jointFilter).map(function(player) {
+    var players = PLAYERS.filter(jointFilter).filter(notDead).map(function(player) {
          return {
              id: player.id,
              position: player.position,
@@ -414,6 +508,13 @@ setInterval(function() {
     broadcast(data);
 
 }, SOCKET_SEND_INTERVAL);
+
+setInterval(function() {
+    var timeBack = new Date().getTime() - 10000;
+    BULLETS = BULLETS.filter(function(bullet) {
+        return bullet.ts > timeBack;
+    });
+}, 2000);
 
 /**
  * Отправить сообщение одному пользователю.
@@ -465,4 +566,20 @@ function broadcastExcept(except, data) {
             }
         }
     });
+}
+
+var PULL_ID = [];
+
+/**
+ * return {string}
+ */
+function getUniqId() {
+    var id = String(Math.random()).substr(2);
+
+    if (PULL_ID.indexOf(id) === -1) {
+        PULL_ID.push(id);
+        return id;
+    } else {
+        return getUniqId();
+    }
 }
