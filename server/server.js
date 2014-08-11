@@ -164,38 +164,39 @@ wsServer.on('request', function(request) {
 
                     _.extend(player, TANK_VARIATIONS[player.tankType]);
 
-                    respawnPlayer(player);
+                    respawnPlayer(player, function() {
 
-                    send(player, {
-                        event: 'playerList',
-                        data: PLAYERS.filter(jointFilter).map(function(player) {
-                            return {
+                        send(player, {
+                            event: 'playerList',
+                            data: PLAYERS.filter(jointFilter).map(function(player) {
+                                return {
+                                    id: player.id,
+                                    name: player.name,
+                                    color: player.color,
+                                    kills: player.kills,
+                                    deaths: player.deaths
+                                };
+                            })
+                        });
+
+                        broadcastExcept(player, {
+                            event: 'playerJoined',
+                            data: {
                                 id: player.id,
                                 name: player.name,
                                 color: player.color,
                                 kills: player.kills,
                                 deaths: player.deaths
-                            };
-                        })
-                    });
+                            }
+                        });
 
-                    broadcastExcept(player, {
-                        event: 'playerJoined',
-                        data: {
-                            id: player.id,
-                            name: player.name,
-                            color: player.color,
-                            kills: player.kills,
-                            deaths: player.deaths
-                        }
-                    });
-
-                    send(player, {
-                        event: 'details',
-                        data: {
-                            map: MAP,
-                            hp: player.hp
-                        }
+                        send(player, {
+                            event: 'details',
+                            data: {
+                                map: MAP,
+                                hp: player.hp
+                            }
+                        });
                     });
 
                     break;
@@ -208,7 +209,7 @@ wsServer.on('request', function(request) {
                 case 'shoot':
                     var now = new Date().getTime();
 
-                    if (player.lastShootTS + player.recoilTime < now) {
+                    if (!player.dead && (player.lastShootTS + player.recoilTime < now)) {
                         player.lastShootTS = now;
 
                         var bullet = {
@@ -596,14 +597,15 @@ function notDead(obj) {
     return !obj.dead;
 }
 
-function respawnPlayer(player) {
+function respawnPlayer(player, callback) {
 
-    for (var i = 0; i < 10; ++i) {
-        setRandomRespawnPosition(player);
+    setRandomRespawnPosition(player);
 
-        if (!checkPlayerCollision(player)) {
-            break;
-        }
+    if (checkPlayerCollision(player)) {
+        setTimeout(function() {
+            respawnPlayer(player, callback);
+        }, 200);
+        return;
     }
 
     player.hp = player.maxHp;
@@ -615,6 +617,8 @@ function respawnPlayer(player) {
             hp: player.hp
         }
     });
+
+    callback && callback();
 }
 
 function setRandomRespawnPosition(player) {
